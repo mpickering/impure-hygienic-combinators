@@ -1,6 +1,7 @@
 {-# LANGUAGE TypeOperators, TypeFamilies #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 -- Gibonacci example
 
@@ -16,7 +17,7 @@ import Control.Applicative
 -- Unstaged Gibonacci:
 --   compute the n-th element of the Fibonacci sequence whose
 --   first two elements are x and y
--- 
+--
 -- The code below is contrived and can be written (much) simpler
 -- but we stick with it for the sake of the example.
 
@@ -158,7 +159,7 @@ gibSLn n = runJCPSA $ lam (\x -> lam (\y ->
 
 -- The generated code looks like that in the A-normal form
 -- Arguments of all applications (additions) are variables.
-gibSL5  = runCI $ gibSLn 5 
+gibSL5  = runCI $ gibSLn 5
 {-
 "\\x_0 -> \\x_1 -> let z_2 =
     let z_2 =
@@ -259,7 +260,7 @@ mapState ::
 mapState f m2 = S.state $ \s1 -> (S.evalState m2 (M.map f s1), s1)
 
 -- mapCPSA :: CPSA m1 w a -> CPSA m2 w a
--- mapCPSA cm1 = CPSA $ \k -> 
+-- mapCPSA cm1 = CPSA $ \k ->
 
 {-
 gibF :: forall repr i m.
@@ -293,7 +294,7 @@ gibF x y n = loop n
 -- gibFn n = runJCPSA $ lam (\x -> lam (\y ->
 --                             resetJ $ gibF (weaken (var x)) (var y) n))
 
--- gibF5  = runCI $ gibFn 5 
+-- gibF5  = runCI $ gibFn 5
 
 Need indexed Applicative (parameterized Applicative)?
 Or need generalized CPSA
@@ -340,7 +341,7 @@ gibK2 x y n = loop M.empty n (\v s -> v)
      Just v  -> k v s
      Nothing -> loop' s n $ \v s ->
         k v (M.insert n v s)
-   
+
    loop' s 0 k = k x s
    loop' s 1 k = k y s
    loop' s n k = loop s (n-1) $ \v1 s ->
@@ -362,7 +363,7 @@ gibK3 x y n = loop M.empty n (\v s -> v)
      Nothing -> loop' s n $ \v s ->
         let_S v $ \z ->
         k z (M.insert n z s)
-   
+
    loop' s 0 k = k x s
    loop' s 1 k = k y s
    loop' s n k = loop s (n-1) $ \v1 s ->
@@ -387,7 +388,7 @@ gibK4 x y n = loop M.empty n (\v s -> v)
      Just v  -> k v s
      Nothing -> loop' s n $ \v s ->
         k v (M.insert n v s)
-   
+
    loop' s 0 k = k x s
    loop' s 1 k = k y s
    loop' s n k = loop s (n-1) $ \v1 s ->
@@ -397,7 +398,7 @@ gibK4 x y n = loop M.empty n (\v s -> v)
 -- Add tracing, for cache hits
 
 -- Can no longer use the single map
-{- 
+{-
 gibK4' :: (SSym repr, SymLet repr, Applicative m) =>
          m (repr Int) -> m (repr Int) -> Int -> m (repr Int)
 gibK4' x y n = loop M.empty n (\v s -> v)
@@ -407,7 +408,7 @@ gibK4' x y n = loop M.empty n (\v s -> v)
      Nothing -> loop' s n $ \v s ->
         let_ v $ \z ->
         k z (M.insert n z s)
-   
+
    loop' s 0 k = k x s
    loop' s 1 k = k y s
    loop' s n k = loop s (n-1) $ \v1 s ->
@@ -481,7 +482,7 @@ gibL2 :: (SSym repr, SymLet repr, Applicative m0, AppLiftable i,
 gibL2 x y n = loop M.empty n
  where loop s n = case M.lookup n s of
          Just v -> J $ return (v,s)
-         
+
        -- loop' s 0 = (\v -> (v,s)) <$> x
        -- loop' s 1 = (\v -> (v,s)) <$> y
        loop' s n = J $ do
@@ -516,7 +517,7 @@ tX1n = runCS $ gibX1n 5
 -- Effectful
 gibX2 :: (SSym repr, Applicative i) =>
          (IO :. i) (repr Int)  -> (IO :. i) (repr Int) -> Int ->
-         (IO :. i) (repr Int) 
+         (IO :. i) (repr Int)
 gibX2 x y 0 = x
 gibX2 x y 1 = y
 gibX2 x y n = gibX2 y (Gib.addt x y) (n-1)
@@ -528,7 +529,7 @@ tX2n = runC $ gibX2n 5
 
 gibX5 :: (SSym repr, SymLet repr, Applicative m, Applicative i) =>
          (m :. i) (repr Int)  -> (m :. i) (repr Int) -> Int ->
-         (m :. i) (repr Int) 
+         (m :. i) (repr Int)
 gibX5 x y 0 = x
 gibX5 x y 1 = y
 gibX5 x y n = let_ (x +: y) $ \z -> gibX5 (weaken y) (var z) (n-1)
@@ -546,7 +547,7 @@ addt x y = trace "generating add" (x +: y)
 -- Polymorphic recursion: signature is needed
 gibXT :: (SSym repr, SymLet repr, Applicative i) =>
          (IO :. i) (repr Int)  -> (IO :. i) (repr Int) -> Int ->
-         (IO :. i) (repr Int) 
+         (IO :. i) (repr Int)
 gibXT x y 0 = x
 gibXT x y 1 = y
 gibXT x y n = let_ (Gib.addt x y) $ \z -> gibXT (weaken y) (var z) (n-1)

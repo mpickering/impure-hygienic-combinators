@@ -25,7 +25,7 @@ power27 = 128 == power 7 2
 -- staged power, specialized to n
 --   present stage: Haskell
 --   future stage: our EDSL
--- Since the present stage is Haskell, we get to use the nice 
+-- Since the present stage is Haskell, we get to use the nice
 -- pattern-matching and built-in recursion
 
 spower :: SSym repr => Int -> repr Int -> repr Int
@@ -37,13 +37,13 @@ spower n x = mulS `appS` x `appS` spower (n-1) x
 -- The signature has been inferred
 spowern :: (SSym repr, LamPure repr) =>
      Int -> repr (Int -> Int)
-spowern n = lamS (\x -> spower n x)
+spowern n = lamS (spower n)
 
 spower7 = spowern 7
 
 spower72_r = 128 == unR spower7 2
 
-spower7_c = 
+spower7_c =
  "\\x_0 -> (GHC.Num.*) x_0 ((GHC.Num.*) x_0 ((GHC.Num.*) x_0 " ++
     "((GHC.Num.*) x_0 ((GHC.Num.*) x_0 " ++
     "((GHC.Num.*) x_0 ((GHC.Num.*) x_0 1))))))"
@@ -93,9 +93,9 @@ spowerF _ _ = throwA "negative exponent"
 
 -- future-stage function
 spowerFn :: (LamPure repr, SSym repr, AppLiftable i, ErrorA m,
-             ErrT m ~ [Char]) =>
+             ErrT m ~ String) =>
      Int -> (m :. i) (repr (Int -> Int))
-spowerFn n = lam (\x -> spowerF n (var x))
+spowerFn n = lam (spowerF n . var)
 
 -- The `negative exponent' error is reported when the specialization
 -- is performed -- not when the function is applied!
@@ -108,7 +108,7 @@ tsp1 = Right (128,2187) == test_spowerF 7
 
 tsp2 = Left "negative exponent" == test_spowerF (-1)
 
-tsp1c = 
+tsp1c =
    Right ("\\x_0 -> (GHC.Num.*) x_0 ((GHC.Num.*) x_0 "++
           "((GHC.Num.*) x_0 ((GHC.Num.*) x_0 ((GHC.Num.*) x_0 "++
     "((GHC.Num.*) x_0 ((GHC.Num.*) x_0 1))))))")
